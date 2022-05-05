@@ -1,4 +1,4 @@
-const ErrorHander = require("../utils/errorhander");
+const ErrorHandler = require("../utils/ErrorHandler");
 const catchAsyncErrors = require("../middleware/catchAsyncErrors");
 const User = require("../models/userModel");
 const sendToken = require("../utils/jwtToken");
@@ -39,20 +39,20 @@ exports.loginUser = catchAsyncErrors(async (req, res, next) => {
 
   //kiểm tra xem người dùng đã cung cấp mật khẩu và email chưa
   if (!email || !password) {
-    return next(new ErrorHander("Please Enter Email & Password", 400));
+    return next(new ErrorHandler("Please Enter Email & Password", 400));
   }
 
   const user = await User.findOne({ email }).select("+password");
 
 
   if (!user) {
-    return next(new ErrorHander("Invalid email or password", 401));
+    return next(new ErrorHandler("Invalid email or password", 401));
   }
 
   const isPasswordMatched = await user.comparePassword(password);
 
   if (!isPasswordMatched) {
-    return next(new ErrorHander("Invalid email or password", 401));
+    return next(new ErrorHandler("Invalid email or password", 401));
   }
 
   sendToken(user, 200, res);
@@ -80,7 +80,7 @@ exports.forgotPassword = catchAsyncErrors(async (req, res, next) => {
   const user = await User.findOne({ email: req.body.email });
 
   if (!user) {
-    return next(new ErrorHander("User not found", 404));
+    return next(new ErrorHandler("User not found", 404));
   }
 
   // Get ResetPassword Token
@@ -111,7 +111,7 @@ exports.forgotPassword = catchAsyncErrors(async (req, res, next) => {
 
     await user.save({ validateBeforeSave: false });
 
-    return next(new ErrorHander(error.message, 500));
+    return next(new ErrorHandler(error.message, 500));
   }
 });
 
@@ -131,7 +131,7 @@ exports.resetPassword = catchAsyncErrors(async (req, res, next) => {
 
   if (!user) {
     return next(
-      new ErrorHander(
+      new ErrorHandler(
         "Reset Password Token is invalid or has been expired",
         400
       )
@@ -139,7 +139,7 @@ exports.resetPassword = catchAsyncErrors(async (req, res, next) => {
   }
 
   if (req.body.password !== req.body.confirmPassword) {
-    return next(new ErrorHander("Password does not password", 400));
+    return next(new ErrorHandler("Password does not password", 400));
   }
 
   user.password = req.body.password;
@@ -169,11 +169,11 @@ exports.updatePassword = catchAsyncErrors(async (req, res, next) => {
   const isPasswordMatched = await user.comparePassword(req.body.oldPassword);
 
   if (!isPasswordMatched) {
-    return next(new ErrorHander("Old password is incorrect", 400));
+    return next(new ErrorHandler("Old password is incorrect", 400));
   }
 
   if (req.body.newPassword !== req.body.confirmPassword) {
-    return next(new ErrorHander("password does not match", 400));
+    return next(new ErrorHandler("password does not match", 400));
   }
 
   user.password = req.body.newPassword;
@@ -220,7 +220,7 @@ exports.getSingleUser = catchAsyncErrors(async (req, res, next) => {
 
   if (!user) {
     return next(
-      new ErrorHander(`User does not exist with Id: ${req.params.id}`)
+      new ErrorHandler(`User does not exist with Id: ${req.params.id}`)
     );
   }
 
@@ -255,7 +255,7 @@ exports.deleteUser = catchAsyncErrors(async (req, res, next) => {
 
   if (!user) {
     return next(
-      new ErrorHander(`User does not exist with Id: ${req.params.id}`, 400)
+      new ErrorHandler(`User does not exist with Id: ${req.params.id}`, 400)
     );
   }
 
