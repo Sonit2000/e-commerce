@@ -1,4 +1,4 @@
-const ErrorHandler = require("../utils/ErrorHandler");
+const ErrorHander = require("../utils/errorhander");
 const catchAsyncErrors = require("../middleware/catchAsyncErrors");
 const User = require("../models/userModel");
 const sendToken = require("../utils/jwtToken");
@@ -11,25 +11,25 @@ const crypto = require("crypto");
 exports.registerUser = catchAsyncErrors(async (req, res, next) => {
 
 
-  const { name, email, password } = req.body;
+    const { name, email, password } = req.body;
 
-  const user = await User.create({
-    name,
-    email,
-    password,
-    avatar: {
-      public_id: "this is a sample id",
-      url: "profilepicUrl",
-    },
-  });
+    const user = await User.create({
+        name,
+        email,
+        password,
+        avatar: {
+          public_id: "this is a sample id",
+          url: "profilepicUrl",
+        },
+      });
 
-  sendToken(user, 201, res);
-  // const token = user.getJWTToken();
+      sendToken(user, 201, res);
+      // const token = user.getJWTToken();
 
-  // res.status(201).json({
-  //     success: true,
-  //     token,
-  // });
+      // res.status(201).json({
+      //     success: true,
+      //     token,
+      // });
 });
 
 // Login User
@@ -39,20 +39,20 @@ exports.loginUser = catchAsyncErrors(async (req, res, next) => {
 
   //kiểm tra xem người dùng đã cung cấp mật khẩu và email chưa
   if (!email || !password) {
-    return next(new ErrorHandler("Please Enter Email & Password", 400));
+    return next(new ErrorHander("Please Enter Email & Password", 400));
   }
 
   const user = await User.findOne({ email }).select("+password");
 
-
+  
   if (!user) {
-    return next(new ErrorHandler("Invalid email or password", 401));
+    return next(new ErrorHander("Invalid email or password", 401));
   }
 
   const isPasswordMatched = await user.comparePassword(password);
 
   if (!isPasswordMatched) {
-    return next(new ErrorHandler("Invalid email or password", 401));
+    return next(new ErrorHander("Invalid email or password", 401));
   }
 
   sendToken(user, 200, res);
@@ -61,7 +61,7 @@ exports.loginUser = catchAsyncErrors(async (req, res, next) => {
 
 
 // Logout User
-exports.logout = catchAsyncErrors(async (req, res, next) => {
+exports.logout = catchAsyncErrors(async (req, res, next) =>{
 
   res.cookie("token", null, {
     expires: new Date(Date.now()),
@@ -80,7 +80,7 @@ exports.forgotPassword = catchAsyncErrors(async (req, res, next) => {
   const user = await User.findOne({ email: req.body.email });
 
   if (!user) {
-    return next(new ErrorHandler("User not found", 404));
+    return next(new ErrorHander("User not found", 404));
   }
 
   // Get ResetPassword Token
@@ -111,7 +111,7 @@ exports.forgotPassword = catchAsyncErrors(async (req, res, next) => {
 
     await user.save({ validateBeforeSave: false });
 
-    return next(new ErrorHandler(error.message, 500));
+    return next(new ErrorHander(error.message, 500));
   }
 });
 
@@ -131,7 +131,7 @@ exports.resetPassword = catchAsyncErrors(async (req, res, next) => {
 
   if (!user) {
     return next(
-      new ErrorHandler(
+      new ErrorHander(
         "Reset Password Token is invalid or has been expired",
         400
       )
@@ -139,7 +139,7 @@ exports.resetPassword = catchAsyncErrors(async (req, res, next) => {
   }
 
   if (req.body.password !== req.body.confirmPassword) {
-    return next(new ErrorHandler("Password does not password", 400));
+    return next(new ErrorHander("Password does not password", 400));
   }
 
   user.password = req.body.password;
@@ -169,11 +169,11 @@ exports.updatePassword = catchAsyncErrors(async (req, res, next) => {
   const isPasswordMatched = await user.comparePassword(req.body.oldPassword);
 
   if (!isPasswordMatched) {
-    return next(new ErrorHandler("Old password is incorrect", 400));
+    return next(new ErrorHander("Old password is incorrect", 400));
   }
 
   if (req.body.newPassword !== req.body.confirmPassword) {
-    return next(new ErrorHandler("password does not match", 400));
+    return next(new ErrorHander("password does not match", 400));
   }
 
   user.password = req.body.newPassword;
@@ -190,18 +190,18 @@ exports.updateProfile = catchAsyncErrors(async (req, res, next) => {
     email: req.body.email,
   };
 
-  //
+//
   const user = await User.findByIdAndUpdate(req.user.id, newUserData, {
     new: true,
     runValidators: true,
     useFindAndModify: false,
-  })
-
+  }) 
+  
   res.status(200).json({
     success: true,
   });
 
-});
+}); 
 
 // Get all users(admin)
 exports.getAllUser = catchAsyncErrors(async (req, res, next) => {
@@ -220,7 +220,7 @@ exports.getSingleUser = catchAsyncErrors(async (req, res, next) => {
 
   if (!user) {
     return next(
-      new ErrorHandler(`User does not exist with Id: ${req.params.id}`)
+      new ErrorHander(`User does not exist with Id: ${req.params.id}`)
     );
   }
 
@@ -228,7 +228,7 @@ exports.getSingleUser = catchAsyncErrors(async (req, res, next) => {
     success: true,
     user,
   });
-});
+}); 
 
 // update User Role -- Admin
 exports.updateUserRole = catchAsyncErrors(async (req, res, next) => {
@@ -255,7 +255,7 @@ exports.deleteUser = catchAsyncErrors(async (req, res, next) => {
 
   if (!user) {
     return next(
-      new ErrorHandler(`User does not exist with Id: ${req.params.id}`, 400)
+      new ErrorHander(`User does not exist with Id: ${req.params.id}`, 400)
     );
   }
 
