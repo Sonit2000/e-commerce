@@ -4,12 +4,15 @@ const User = require("../models/userModel");
 const sendToken = require("../utils/jwtToken");
 const sendEmail = require("../utils/sendEmail");
 const crypto = require("crypto");
+const cloudinary = require("cloudinary");
 
-
-
-// Đăng ký người dùng
+// Register a User
 exports.registerUser = catchAsyncErrors(async (req, res, next) => {
-
+  const myCloud = await cloudinary.v2.uploader.upload(req.body.avatar, {
+    folder: "avatars",
+    width: 150,
+    crop: "scale",
+  });
 
   const { name, email, password } = req.body;
 
@@ -18,32 +21,25 @@ exports.registerUser = catchAsyncErrors(async (req, res, next) => {
     email,
     password,
     avatar: {
-      public_id: "this is a sample id",
-      url: "profilepicUrl",
+      public_id: myCloud.public_id,
+      url: myCloud.secure_url,
     },
   });
 
   sendToken(user, 201, res);
-  // const token = user.getJWTToken();
-
-  // res.status(201).json({
-  //     success: true,
-  //     token,
-  // });
 });
 
 // Login User
 exports.loginUser = catchAsyncErrors(async (req, res, next) => {
-
   const { email, password } = req.body;
 
-  //kiểm tra xem người dùng đã cung cấp mật khẩu và email chưa
+  // checking if user has given password and email both
+
   if (!email || !password) {
     return next(new ErrorHander("Please Enter Email & Password", 400));
   }
 
   const user = await User.findOne({ email }).select("+password");
-
 
   if (!user) {
     return next(new ErrorHander("Invalid email or password", 401));
@@ -56,13 +52,10 @@ exports.loginUser = catchAsyncErrors(async (req, res, next) => {
   }
 
   sendToken(user, 200, res);
-
 });
-
 
 // Logout User
 exports.logout = catchAsyncErrors(async (req, res, next) => {
-
   res.cookie("token", null, {
     expires: new Date(Date.now()),
     httpOnly: true,
@@ -70,9 +63,8 @@ exports.logout = catchAsyncErrors(async (req, res, next) => {
 
   res.status(200).json({
     success: true,
-    message: "Logged out"
-  })
-
+    message: "Logged Out",
+  });
 });
 
 // Forgot Password
@@ -115,7 +107,6 @@ exports.forgotPassword = catchAsyncErrors(async (req, res, next) => {
   }
 });
 
-
 // Reset Password
 exports.resetPassword = catchAsyncErrors(async (req, res, next) => {
   // creating token hash
@@ -151,8 +142,7 @@ exports.resetPassword = catchAsyncErrors(async (req, res, next) => {
   sendToken(user, 200, res);
 });
 
-//Get user Detail 
-
+// Get User Detail
 exports.getUserDetails = catchAsyncErrors(async (req, res, next) => {
   const user = await User.findById(req.user.id);
 
@@ -183,24 +173,41 @@ exports.updatePassword = catchAsyncErrors(async (req, res, next) => {
   sendToken(user, 200, res);
 });
 
-// update  Name User Profile
+// update User Profile
 exports.updateProfile = catchAsyncErrors(async (req, res, next) => {
   const newUserData = {
     name: req.body.name,
     email: req.body.email,
   };
 
-  //
+  if (req.body.avatar !== "") {
+    const user = await User.findById(req.user.id);
+
+    const imageId = user.avatar.public_id;
+
+    await cloudinary.v2.uploader.destroy(imageId);
+
+    const myCloud = await cloudinary.v2.uploader.upload(req.body.avatar, {
+      folder: "avatars",
+      width: 150,
+      crop: "scale",
+    });
+
+    newUserData.avatar = {
+      public_id: myCloud.public_id,
+      url: myCloud.secure_url,
+    };
+  }
+
   const user = await User.findByIdAndUpdate(req.user.id, newUserData, {
     new: true,
     runValidators: true,
     useFindAndModify: false,
-  })
+  });
 
   res.status(200).json({
     success: true,
   });
-
 });
 
 // Get all users(admin)
@@ -212,7 +219,6 @@ exports.getAllUser = catchAsyncErrors(async (req, res, next) => {
     users,
   });
 });
-
 
 // Get single user (admin)
 exports.getSingleUser = catchAsyncErrors(async (req, res, next) => {
@@ -259,9 +265,9 @@ exports.deleteUser = catchAsyncErrors(async (req, res, next) => {
     );
   }
 
-  // const imageId = user.avatar.public_id;
+  const imageId = user.avatar.public_id;
 
-  // await cloudinary.v2.uploader.destroy(imageId);
+  await cloudinary.v2.uploader.destroy(imageId);
 
   await user.remove();
 
@@ -270,9 +276,3 @@ exports.deleteUser = catchAsyncErrors(async (req, res, next) => {
     message: "User Deleted Successfully",
   });
 });
-
-
-
-
-
-

@@ -7,13 +7,12 @@ class ApiFeatures {
   search() {
     const keyword = this.queryStr.keyword
       ? {
-        name: {
-          $regex: this.queryStr.keyword,
-          $options: "i",
-        },
-      }
+          name: {
+            $regex: this.queryStr.keyword,
+            $options: "i",
+          },
+        }
       : {};
-
 
     this.query = this.query.find({ ...keyword });
     return this;
@@ -27,15 +26,15 @@ class ApiFeatures {
     removeFields.forEach((key) => delete queryCopy[key]);
 
     // Filter For Price and Rating
-    
 
     let queryStr = JSON.stringify(queryCopy);
     queryStr = queryStr.replace(/\b(gt|gte|lt|lte)\b/g, (key) => `$${key}`);
+
     this.query = this.query.find(JSON.parse(queryStr));
-    
 
     return this;
   }
+
   pagination(resultPerPage) {
     const currentPage = Number(this.queryStr.page) || 1;
 
@@ -45,7 +44,6 @@ class ApiFeatures {
 
     return this;
   }
-};
-
+}
 
 module.exports = ApiFeatures;

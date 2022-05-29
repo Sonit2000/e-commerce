@@ -1,12 +1,8 @@
 const app = require("./app");
-var morgan = require('morgan')
+const cloudinary = require("cloudinary");
+const connectDatabase = require("./config/database");
 
-const dotenv = require("dotenv");
-const connectDatabase = require("./config/database")
-
-app.use(morgan('combined'))
-
-//Handling Uncaught Exception
+// Handling Uncaught Exception
 process.on("uncaughtException", (err) => {
   console.log(`Error: ${err.message}`);
   console.log(`Shutting down the server due to Uncaught Exception`);
@@ -14,18 +10,24 @@ process.on("uncaughtException", (err) => {
 });
 
 // Config
-dotenv.config({ path: "backend/config/config.env" });
+if (process.env.NODE_ENV !== "PRODUCTION") {
+  require("dotenv").config({ path: "backend/config/config.env" });
+}
 
-//connecting to database
+// Connecting to database
 connectDatabase();
+
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
 
 const server = app.listen(process.env.PORT, () => {
   console.log(`Server is working on http://localhost:${process.env.PORT}`);
 });
 
-
-
-//unhandled promise rejections
+// Unhandled Promise Rejection
 process.on("unhandledRejection", (err) => {
   console.log(`Error: ${err.message}`);
   console.log(`Shutting down the server due to Unhandled Promise Rejection`);

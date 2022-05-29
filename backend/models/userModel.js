@@ -5,70 +5,70 @@ const jwt = require("jsonwebtoken");
 const crypto = require("crypto");
 
 const userSchema = new mongoose.Schema({
+  name: {
+    type: String,
+    required: [true, "Please Enter Your Name"],
+    maxLength: [30, "Name cannot exceed 30 characters"],
+    minLength: [4, "Name should have more than 4 characters"],
+  },
+  email: {
+    type: String,
+    required: [true, "Please Enter Your Email"],
+    unique: true,
+    validate: [validator.isEmail, "Please Enter a valid Email"],
+  },
+  password: {
+    type: String,
+    required: [true, "Please Enter Your Password"],
+    minLength: [8, "Password should be greater than 8 characters"],
+    select: false,
+  },
+  avatar: {
+    public_id: {
+      type: String,
+      required: true,
+    },
+    url: {
+      type: String,
+      required: true,
+    },
+  },
+  role: {
+    type: String,
+    default: "user",
+  },
+  createdAt: {
+    type: Date,
+    default: Date.now,
+  },
 
-    name:{
-        type:String,
-        required:[true,"Please enter your name"],
-        maxlength:[30,"Name cannot exceed 30 characters"],
-        minlength:[4,"Name should have more than 4 characters"],
-    },
-    email:{
-        type:String,
-        required:[true,"Please enter your email"],
-        unique:true,
-        validate:[validator.isEmail,"Please enter a Valid Email"],
-    },
-    password:{
-        type:String,
-        required:[true,"Please enter your Password"],
-        minlength:[4,"Name should have more than 4 characters"],
-        select: false,
-    },
-    avatar: {
-        public_id: {
-          type: String,
-          required: true,
-        },
-        url: {
-          type: String,
-          required: true,
-        },
-      },
-    role: {
-        type: String,
-        default: "user",
-    },  
-    
-    resetPasswordToken: String,
-    resetPasswordExpire: Date,
+  resetPasswordToken: String,
+  resetPasswordExpire: Date,
 });
 
 userSchema.pre("save", async function (next) {
-    
-    if (!this.isModified("password")) {
-        next();
-    }
+  if (!this.isModified("password")) {
+    next();
+  }
 
-    this.password = await bcrypt.hash(this.password, 10);
-
+  this.password = await bcrypt.hash(this.password, 10);
 });
 
 // JWT TOKEN
 userSchema.methods.getJWTToken = function () {
-    return jwt.sign({ id: this._id }, process.env.JWT_SECRET, {
-      expiresIn: process.env.JWT_EXPIRE,
-    });   
-
-  };    
-
-// so sánh mật khẩu 
-userSchema.methods.comparePassword = async function (enteredPassword) {
-  return await bcrypt.compare(enteredPassword, this.password);
+  return jwt.sign({ id: this._id }, process.env.JWT_SECRET, {
+    expiresIn: process.env.JWT_EXPIRE,
+  });
 };
 
-// Thông báo đặt lại mật khẩu
-userSchema.methods.getResetPasswordToken = function(){
+// Compare Password
 
+userSchema.methods.comparePassword = async function (password) {
+  return await bcrypt.compare(password, this.password);
+};
+
+// Generating Password Reset Token
+userSchema.methods.getResetPasswordToken = function () {
   // Generating Token
   const resetToken = crypto.randomBytes(20).toString("hex");
 
@@ -78,7 +78,8 @@ userSchema.methods.getResetPasswordToken = function(){
     .update(resetToken)
     .digest("hex");
 
-  this.resetPasswordExpire = Date.now() + 15 * 60 * 1000;  
+  this.resetPasswordExpire = Date.now() + 15 * 60 * 1000;
+
   return resetToken;
 };
 
